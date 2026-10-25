@@ -1,0 +1,117 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+		T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+	
+	\title{An Information Geometry Approach for RIS Phase Estimation and Signal Detection in MIMO Systems}
+	
+	\author{\IEEEauthorblockN{1\textsuperscript{st} Ali Elahirad}
+		\IEEEauthorblockA{\textit{Signal Processing and Communication} \\
+			\textit{Systems Laboratory}\\
+			\textit{University of Tehran}\\
+			Tehran, Iran \\
+			ali.elahirad@ut.ac.ir}
+		\and
+		\IEEEauthorblockN{2\textsuperscript{nd} Mojtaba Amiri}
+		\IEEEauthorblockA{\textit{Signal Processing and Communication} \\
+			\textit{Systems Laboratory}\\
+			\textit{University of Tehran}\\
+			Tehran, Iran \\
+			mojtaba.amiri@ut.ac.ir}
+		\and
+		\IEEEauthorblockN{3\textsuperscript{rd} Ali Olfat}
+		\IEEEauthorblockA{\textit{Signal Processing and Communication} \\
+			\textit{Systems Laboratory}\\
+			\textit{University of Tehran}\\
+			Tehran, Iran \\
+			aolfat@ut.ac.ir}
+	}
+	
+	\maketitle
+	
+	\begin{abstract}
+		In reconfigurable intelligent surface (RIS)-assisted massive MIMO systems, practical hardware constraints restrict reflection phases to a discrete alphabet, turning phase estimation into an intractable problem that suffers from severe ambiguities in overloaded regimes. Furthermore, cascaded reflection links induce strong spatial channel correlation, causing conventional scalar detectors to break down. To address these challenges, this paper proposes a unified information geometry approach (IGA) for discrete phase estimation and signal detection. For phase calibration, an online IGA estimator accumulates multi-pilot evidence to stably recover the discrete phase states without exhaustive search. For data detection, a multivariate IGA (M-IGA) detector resolves cross-antenna spatial coupling. Simulation results show that the proposed phase estimator approaches genie-aided local ML accuracy, while the M-IGA detector attains a 10 dB gain over linear MMSE detection and matches the performance of perfect phase knowledge with minimal pilot overhead.
+	\end{abstract}
+	
+	\begin{IEEEkeywords}
+		Reconfigurable intelligent surface (RIS), MIMO signal detection, discrete phase estimation, Bayesian inference, information geometry, m-projection.
+	\end{IEEEkeywords}
+	
+	\section{Introduction}
+	Driven by the stringent spectral and energy efficiency demands of beyond fifth-generation (B5G) and sixth-generation (6G) wireless networks, ultra-massive multiple-input multiple-output (UM-MIMO) and extremely large-scale antenna arrays (ELAA) are envisioned to deploy hundreds or thousands of antennas at the base station (BS) to serve tens or hundreds of concurrent users simultaneously \cite{b2,b3,b4,b5}. Despite the immense spatial multiplexing gains of UM-MIMO, reliably detecting the multiuser transmitted symbols in the presence of severe co-channel interference poses a major computational challenge as the array dimension scales up. The optimal maximum-likelihood (ML) and maximum \textit{a posteriori} (MAP) detectors require an exhaustive search over all possible transmit vectors, which is non-deterministic polynomial-time hard (NP-hard) and computationally prohibitive for large-scale systems \cite{b10}. Classical linear detectors, such as the linear minimum mean-squared error (LMMSE) detector, along with iterative gradient-based and lattice-reduction schemes \cite{b12,b13}, achieve polynomial-time complexity; however, linear filtering yields biased estimates \cite{b10} and suffers from severe performance degradation in densely loaded multiuser scenarios and high-order modulation schemes \cite{b11}. To bridge this gap, suboptimal Bayesian message-passing approaches—including expectation propagation (EP), belief propagation (BP), and approximate message passing (AMP)—have attracted significant interest \cite{b11,b14,b15,b16,b17}. Nevertheless, EP requires computationally prohibitive high-dimensional matrix inversions at every iteration \cite{b11,b15}, while BP and AMP rely heavily on independent and identically distributed (i.i.d.) channel entries and exhibit catastrophic divergence in ill-conditioned or spatially correlated channels \cite{b14,b16,b17}.
+	
+	Information geometry, pioneered by Rao \cite{b18} and systematically established by Amari \cite{b19} and \v{C}encov \cite{b20}, provides an intrinsic differential-geometric framework for statistical inference. By treating a parameterized family of probability distributions as a Riemannian manifold equipped with the Fisher information matrix (FIM) as its metric tensor, information geometry enables coordinate-invariant analysis and Kullback-Leibler (K-L) divergence projections between probability distributions \cite{b19,b21,b22}. This geometric perspective has offered profound theoretical insights into stochastic reasoning and free-energy minimization \cite{b22}, as well as massive MIMO channel estimation \cite{b25,b26}. Building on this foundation, Yang \textit{et al.} \cite{b1} recently proposed an information geometry approach for signal detection (IGA-SD) in conventional UM-MIMO systems. By embedding the discrete symbol priors into an exponential family manifold, IGA-SD defines an $e$-flat objective manifold (OBM) of factorized marginal distributions alongside $2N_r$ auxiliary manifolds (AMs), each retaining an individual scalar antenna observation constraint. The extraction of \textit{a posteriori} symbol marginals is thereby transformed into an iterative sequence of $m$-projections from the AMs onto the OBM. Coupled with Lyapunov's central limit theorem (CLT), the $m$-projection updates in \cite{b1} are derived in closed form without requiring any matrix inversion, achieving near-MAP detection accuracy with low complexity in conventional i.i.d. Rayleigh fading channels.
+	
+	To further enhance link reliability and coverage in B5G/6G networks, reconfigurable intelligent surfaces (RISs) have emerged as an energy-efficient paradigm to dynamically reshape the wireless propagation environment \cite{b8}. By adjusting the phase shifts of a planar array of nearly passive reflecting elements, an RIS establishes favorable cascaded virtual line-of-sight links between the BS and user terminals, bypassing physical blockages without requiring dedicated radio-frequency (RF) chains. However, operating an RIS-assisted UM-MIMO system requires addressing two intertwined inference tasks: calibrating the RIS reflection phases during pilot training and detecting the multiuser data symbols over the resulting cascaded channel. In practical hardware implementations, continuous phase control is infeasible due to circuit cost and power dissipation; instead, each reflecting element is constrained to a finite discrete alphabet of $L_{\phi}$ quantization levels. Under this discrete setup, verifying or estimating the RIS phases via uplink training pilots—much like multiuser data detection—constitutes a challenging non-linear integer inverse problem. Optimal ML or MAP phase estimation requires an exhaustive search over $L_{\phi}^{N_{\mathrm{ris}}}$ candidate states for an $N_{\mathrm{ris}}$-element surface (e.g., evaluating $100^{64}$ states for $N_{\mathrm{ris}}=64$ and $L_{\phi}=100$), while optimal data detection searches over $\tilde{L}^K$ symbol vectors. Consequently, developing a low-complexity suboptimal inference framework grounded in the information-geometric principles of \cite{b1} is highly compelling for RIS-assisted UM-MIMO systems.
+	
+	However, directly adopting the conventional IGA-SD framework \cite{b1} in RIS-assisted UM-MIMO networks reveals two fundamental mathematical bottlenecks:
+	\begin{enumerate}
+		\item \textit{Cascaded Bilinearity and Overloaded Phase Ambiguity:} Unlike conventional symbol detection \cite{b1} where transmit symbols enter the observation model linearly across known constellation grids, RIS reflection phases modulate the cascaded signal bilinearly on the unit circle. Furthermore, when the number of reflecting elements equals or exceeds the real receiver observation dimension (i.e., the overloaded regime $N_{\mathrm{ris}} \ge 2N_r$, where $N_r$ is the number of BS receive antennas), a single-pilot observation provides insufficient degrees of freedom to resolve the discrete phase states, causing standard single-shot message-passing iterations to suffer from severe ill-conditioning and mean-field collapse.
+		\item \textit{Breakdown of Scalar Independence under Spatial Channel Correlation:} Standard IGA-SD \cite{b1} decouples the observation vector across the BS antennas into independent scalar auxiliary manifolds, implicitly assuming that interference and noise across antennas are conditionally separable. In RIS-assisted systems, the cascaded channel matrix inherently exhibits strong cross-antenna spatial correlation. This spatial coupling violates the scalar observation assumption of classical IGA-SD \cite{b1}, leading to severe error floors and oscillatory divergence.
+	\end{enumerate}
+	
+	To address these critical limitations, this paper extends the information-geometric framework of \cite{b1} and proposes a unified approach covering both discrete RIS phase estimation and robust signal detection over correlated channels. The primary contributions of this paper are summarized as follows:
+	\begin{itemize}
+		\item \textbf{Linearized Formulation and $m$-Projection for Discrete Phase Calibration:} By exploiting the commutativity of diagonal matrix products, we transform the non-linear cascaded RIS link into an equivalent linear observation system. We formulate a real-valued phase-response tensor $\mathbf{H}_{\mathrm{eval}}$ and map discrete phase estimation onto an exponential family manifold. Using the Lyapunov CLT, closed-form $m$-projection update rules are derived, enabling exact marginal estimation without matrix inversion.
+		\item \textbf{Multi-Pilot Persistent Log-Evidence Accumulation:} To stabilize estimation in the overloaded regime ($N_{\mathrm{ris}} \ge 2N_r$), we decouple transient intra-pilot message updates from persistent inter-pilot beliefs. By accumulating log-evidence sequentially across successive pilots, the proposed estimator eliminates mean-field collapse and converges to near-ML performance.
+		\item \textbf{Multivariate IGA (M-IGA) Detector in the Gram Domain:} To conquer spatial correlation during data detection, we design the M-IGA detector. Instead of scalar antenna decomposition, M-IGA models the entire observation vector as a continuous multivariate Gaussian distribution with a full spatial covariance matrix. Cavity distributions are derived analytically via the Sherman-Morrison formula, and $m$-projections are evaluated under the Mahalanobis distance.
+		\item \textbf{Complexity Reduction via Woodbury Identity:} By reformulating the M-IGA updates into the Gram domain using the Woodbury matrix identity, the heavy $\mathcal{O}(N_r^3)$ covariance inversion is eliminated. The inner inversion is reduced to a small $2K \times 2K$ matrix per iteration, achieving exceptional scalability for ultra-massive receive arrays.
+	\end{itemize}
+	
+	\textit{Organization and Notations:} The remainder of this paper is organized as follows. Section II introduces the system model and problem formulation. Section III details the proposed online IGA discrete phase estimator. Section IV presents the multivariate IGA detector in the Gram domain. Simulation results are provided in Section V, and Section VI concludes the paper.
+	
+	Upper and lower case boldface letters denote matrices and column vectors, respectively. $\mathcal{R}\{\cdot\}$ and $\mathcal{I}\{\cdot\}$ denote the real and imaginary parts of a complex quantity. $(\cdot)^T$ and $(\cdot)^H$ denote transpose and conjugate transpose, respectively. $\mathrm{diag}(\mathbf{x})$ denotes the diagonal matrix with $\mathbf{x}$ along its main diagonal. $\mathbf{I}_N$ is the $N \times N$ identity matrix. $D_{\mathrm{KL}}(p \parallel q)$ represents the Kullback-Leibler (K-L) divergence from $p$ to $q$.
+	
+	\section{System Model and Problem Formulation}
+	
+	\subsection{System Configuration and Channel Model}
+	Consider an uplink RIS-assisted multiuser UM-MIMO system where a BS equipped with an ultra-massive antenna array of $N_r$ antennas serves $K$ single-antenna users simultaneously with the assistance of an RIS comprising $N_{\mathrm{ris}}$ nearly passive reflecting elements. Denote the transmitted symbol vector of all users as $\tilde{\mathbf{s}} \triangleq [\tilde{s}_1, \tilde{s}_2, \dots, \tilde{s}_K]^T \in \tilde{\mathbb{S}}^K$, where $\tilde{s}_k \in \tilde{\mathbb{S}}$, $k \in \mathbb{Z}_K^+ \triangleq \{1, 2, \dots, K\}$, represents the transmit symbol of user $k$. The constellation alphabet is denoted by $\tilde{\mathbb{S}} = \{\tilde{s}^{(0)}, \tilde{s}^{(1)}, \dots, \tilde{s}^{(\tilde{L}-1)}\}$ with modulation order $\tilde{L}$. We assume symmetric $\tilde{L}$-QAM modulation with statistically independent transmit symbols normalized to unit average power, i.e., $\mathbb{E}\{|\tilde{s}_k|^2\} = 1$ for all $k \in \mathbb{Z}_K^+$.
+	
+	The phase-shift configuration of the RIS is parameterized by the vector $\tilde{\boldsymbol{\phi}} \triangleq [\tilde{\phi}_1, \tilde{\phi}_2, \dots, \tilde{\phi}_{N_{\mathrm{ris}}}]^T \in \mathcal{S}_{\phi}^{N_{\mathrm{ris}}}$, where $\tilde{\phi}_m$ is the reflection coefficient of the $m$-th RIS element. Due to hardware quantization constraints, the phase shift of each element is restricted to a discrete alphabet of $L_{\phi}$ uniform quantization levels:
+	\begin{equation*}
+		\mathcal{S}_{\phi} = \left\{e^{j\omega_0}, e^{j\omega_1}, \dots, e^{j\omega_{L_{\phi}-1}}\right\}, \quad \omega_l = \frac{2\pi l}{L_{\phi}}, \quad l \in \mathbb{Z}_{L_{\phi}-1}
+	\end{equation*}
+	where $\mathbb{Z}_{L_{\phi}-1} \triangleq \{0, 1, \dots, L_{\phi}-1\}$.
+	
+	The transmission takes place over flat-fading channels. Let $\tilde{\mathbf{H}}_1 \in \mathbb{C}^{N_r \times N_{\mathrm{ris}}}$, $\tilde{\mathbf{H}}_2 \in \mathbb{C}^{N_{\mathrm{ris}} \times K}$, and $\tilde{\mathbf{H}}_d \in \mathbb{C}^{N_r \times K}$ denote the physical channel matrices corresponding to the RIS-to-BS link, the user-to-RIS link, and the direct user-to-BS link, respectively. The complex baseband received signal vector $\tilde{\mathbf{y}} \in \mathbb{C}^{N_r}$ at the BS is modeled as
+	\begin{equation}
+		\tilde{\mathbf{y}} = \left(\tilde{\mathbf{H}}_d + \tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\boldsymbol{\phi}}) \tilde{\mathbf{H}}_2\right)\tilde{\mathbf{s}} + \tilde{\mathbf{z}} \label{eq1}
+	\end{equation}
+	where $\tilde{\mathbf{z}} \sim \mathcal{CN}(\mathbf{0}, \tilde{\sigma}_z^2 \mathbf{I}_{N_r})$ is an additive circular-symmetric complex Gaussian noise vector with variance $\tilde{\sigma}_z^2$. The overall system operates across two successive phases: (i) the training phase for RIS phase calibration, and (ii) the data transmission phase for symbol detection.
+	
+	\begin{thebibliography}{00}
+		\bibitem{b1} J. Yang, Y. Chen, X. Gao, D. T. M. Slock, and X.-G. Xia, ``Signal detection for ultra-massive MIMO: An information geometry approach,'' \textit{IEEE Trans. Signal Process.}, vol. 72, pp. 824--838, 2024, doi: 10.1109/TSP.2024.3358617.
+		\bibitem{b2} E. Bj\"ornson, L. Van der Perre, S. Buzzi, and E. G. Larsson, ``Massive MIMO in sub-6 GHz and mmWave: Physical, practical, and use-case differences,'' \textit{IEEE Wireless Commun.}, vol. 26, no. 2, pp. 100--108, Apr. 2019, doi: 10.1109/MWC.2018.1800140.
+		\bibitem{b3} H. Jin, K. Liu, M. Zhang, L. Zhang, G. Lee, E. N. Farag, D. Zhu, E. N. Onggosanusi, M. Shafi, and H. Tataria, ``Massive MIMO evolution toward 3GPP Release 18,'' \textit{IEEE J. Sel. Areas Commun.}, vol. 41, no. 6, pp. 1635--1654, Jun. 2023, doi: 10.1109/JSAC.2023.3273768.
+		\bibitem{b4} C.-X. Wang \textit{et al.}, ``On the road to 6G: Visions, requirements, key technologies and testbeds,'' \textit{IEEE Commun. Surveys Tuts.}, vol. 25, no. 2, pp. 905--974, 2nd Quart. 2023, doi: 10.1109/COMST.2023.3249835.
+		\bibitem{b5} E. Bj\"ornson, L. Sanguinetti, H. Wymeersch, J. Hoydis, and T. L. Marzetta, ``Massive MIMO is a reality---What is next?: Five promising research directions for antenna arrays,'' \textit{Digit. Signal Process.}, vol. 94, pp. 3--20, Nov. 2019, doi: 10.1016/j.dsp.2019.06.007.
+		\bibitem{b8} Q. Wu and R. Zhang, ``Towards smart and reconfigurable wireless networks: Intelligent reflecting surface: Configuration design and channel estimation,'' \textit{IEEE Commun. Mag.}, vol. 58, no. 1, pp. 106--112, Jan. 2020, doi: 10.1109/MCOM.001.1900543.
+		\bibitem{b10} S. Yang and L. Hanzo, ``Fifty years of MIMO detection: The road to large-scale MIMOs,'' \textit{IEEE Commun. Surveys Tuts.}, vol. 17, no. 4, pp. 1941--1988, 4th Quart. 2015, doi: 10.1109/COMST.2015.2475242.
+		\bibitem{b11} J. C\'espedes, P. M. Olmos, M. S\'anchez-Fern\'andez, and F. Perez-Cruz, ``Expectation propagation detection for high-order high-dimensional MIMO systems,'' \textit{IEEE Trans. Commun.}, vol. 62, no. 8, pp. 2840--2849, Aug. 2014, doi: 10.1109/TCOMM.2014.2332349.
+		\bibitem{b12} Y. Wei, M.-M. Zhao, M. Hong, M.-J. Zhao, and M. Lei, ``Learned conjugate gradient descent network for massive MIMO detection,'' \textit{IEEE Trans. Signal Process.}, vol. 68, pp. 6336--6349, 2020, doi: 10.1109/TSP.2020.3035832.
+		\bibitem{b13} Q. Zhou and X. Ma, ``Element-based lattice reduction algorithms for large MIMO detection,'' \textit{IEEE J. Sel. Areas Commun.}, vol. 31, no. 2, pp. 274--286, Feb. 2013, doi: 10.1109/JSAC.2013.130215.
+		\bibitem{b14} T. Takahashi, A. T\"olli, S. Ibi, and S. Sampei, ``Low-complexity large MIMO detection via layered belief propagation in beam domain,'' \textit{IEEE Trans. Wireless Commun.}, vol. 21, no. 1, pp. 234--249, Jan. 2022, doi: 10.1109/TWC.2021.3094970.
+		\bibitem{b15} Z. Zhang, H. Li, Y. Dong, X. Wang, and X. Dai, ``Decentralized signal detection via expectation propagation algorithm for uplink massive MIMO systems,'' \textit{IEEE Trans. Veh. Technol.}, vol. 69, no. 10, pp. 11233--11240, Oct. 2020, doi: 10.1109/TVT.2020.3008151.
+		\bibitem{b16} J. Goldberger and A. Leshem, ``MIMO detection for high-order QAM based on a Gaussian tree approximation,'' \textit{IEEE Trans. Inf. Theory}, vol. 57, no. 8, pp. 4973--4982, Aug. 2011, doi: 10.1109/TIT.2011.2159037.
+		\bibitem{b17} D. L. Donoho, A. Maleki, and A. Montanari, ``Message passing algorithms for compressed sensing: I. Motivation and construction,'' in \textit{Proc. IEEE Inf. Theory Workshop (ITW)}, Cairo, Egypt, Jan. 2010, pp. 1--5, doi: 10.1109/ITWKSPS.2010.5503193.
+		\bibitem{b18} C. R. Rao, ``Information and the accuracy attainable in the estimation of statistical parameters,'' in \textit{Breakthroughs in Statistics}, S. Kotz and N. L. Johnson, Eds. New York, NY, USA: Springer-Verlag, 1992, pp. 235--247.
+		\bibitem{b19} S. Amari and H. Nagaoka, \textit{Methods of Information Geometry}, vol. 191. Providence, RI, USA: American Mathematical Society, 2000.
+		\bibitem{b20} N. N. \v{C}encov, \textit{Statistical Decision Rules and Optimal Inference}, vol. 53. Providence, RI, USA: American Mathematical Society, 2000.
+		\bibitem{b21} S. Amari, \textit{Information Geometry and Its Applications}. Tokyo, Japan: Springer, 2016, doi: 10.1007/978-4-431-55978-8.
+		\bibitem{b22} S. Ikeda, T. Tanaka, and S. Amari, ``Stochastic reasoning, free energy, and information geometry,'' \textit{Neural Comput.}, vol. 16, no. 9, pp. 1779--1810, Sep. 2004, doi: 10.1162/0899766041336477.
+		\bibitem{b25} J. Y. Yang, A.-A. Lu, Y. Chen, X. Q. Gao, X.-G. Xia, and D. T. M. Slock, ``Channel estimation for massive MIMO: An information geometry approach,'' \textit{IEEE Trans. Signal Process.}, vol. 70, pp. 4820--4834, 2022, doi: 10.1109/TSP.2022.3211672.
+		\bibitem{b26} J. Yang, Y. Chen, A.-A. Lu, W. Zhong, X. Gao, X. You, X.-G. Xia, and D. T. M. Slock, ``Channel estimation for massive MIMO-OFDM: Simplified information geometry approach,'' in \textit{Proc. IEEE 98th Veh. Technol. Conf. (VTC-Fall)}, Hong Kong, China, Oct. 2023, pp. 1--6, doi: 10.1109/VTC2023-Fall60731.2023.10333557.
+	\end{thebibliography}
+	
+\end{document}
