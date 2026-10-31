@@ -8,34 +8,35 @@
 \usepackage{xcolor}
 \usepackage{booktabs}
 \usepackage{array}
+\usepackage[hidelinks]{hyperref}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
 		T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \begin{document}
 	
-	\title{An Information Geometry Approach for RIS Phase Estimation and Signal Detection in MIMO Systems}
+	\title{Information-Geometric Phase Calibration and Signal Detection for RIS-Assisted Ultra-Massive MIMO Systems}
 	
 	\author{\IEEEauthorblockN{1\textsuperscript{st} Ali Elahirad}
 		\IEEEauthorblockA{\textit{Signal Processing and Communication} \\
 			\textit{Systems Laboratory}\\
 			\textit{University of Tehran}\\
 			Tehran, Iran \\
-			ali.elahirad@ut.ac.ir}
+			\href{mailto:ali.elahirad@ut.ac.ir}{ali.elahirad@ut.ac.ir}}
 		\and
 		\IEEEauthorblockN{2\textsuperscript{nd} Mojtaba Amiri}
 		\IEEEauthorblockA{\textit{Signal Processing and Communication} \\
 			\textit{Systems Laboratory}\\
 			\textit{University of Tehran}\\
 			Tehran, Iran \\
-			mojtaba.amiri@ut.ac.ir}
+			\href{mailto:mojtaba.amiri@ut.ac.ir}{mojtaba.amiri@ut.ac.ir}}
 		\and
 		\IEEEauthorblockN{3\textsuperscript{rd} Ali Olfat}
 		\IEEEauthorblockA{\textit{Signal Processing and Communication} \\
 			\textit{Systems Laboratory}\\
 			\textit{University of Tehran}\\
 			Tehran, Iran \\
-			aolfat@ut.ac.ir}
+			\href{mailto:aolfat@ut.ac.ir}{aolfat@ut.ac.ir}}
 	}
 	
 	\maketitle
@@ -79,16 +80,105 @@
 	Consider an uplink RIS-assisted multiuser UM-MIMO system where a BS equipped with an ultra-massive antenna array of $N_r$ antennas serves $K$ single-antenna users simultaneously with the assistance of an RIS comprising $N_{\mathrm{ris}}$ nearly passive reflecting elements. Denote the transmitted symbol vector of all users as $\tilde{\mathbf{s}} \triangleq [\tilde{s}_1, \tilde{s}_2, \dots, \tilde{s}_K]^T \in \tilde{\mathbb{S}}^K$, where $\tilde{s}_k \in \tilde{\mathbb{S}}$, $k \in \mathbb{Z}_K^+ \triangleq \{1, 2, \dots, K\}$, represents the transmit symbol of user $k$. The constellation alphabet is denoted by $\tilde{\mathbb{S}} = \{\tilde{s}^{(0)}, \tilde{s}^{(1)}, \dots, \tilde{s}^{(\tilde{L}-1)}\}$ with modulation order $\tilde{L}$. We assume symmetric $\tilde{L}$-QAM modulation with statistically independent transmit symbols normalized to unit average power, i.e., $\mathbb{E}\{|\tilde{s}_k|^2\} = 1$ for all $k \in \mathbb{Z}_K^+$.
 	
 	The phase-shift configuration of the RIS is parameterized by the vector $\tilde{\boldsymbol{\phi}} \triangleq [\tilde{\phi}_1, \tilde{\phi}_2, \dots, \tilde{\phi}_{N_{\mathrm{ris}}}]^T \in \mathcal{S}_{\phi}^{N_{\mathrm{ris}}}$, where $\tilde{\phi}_m$ is the reflection coefficient of the $m$-th RIS element. Due to hardware quantization constraints, the phase shift of each element is restricted to a discrete alphabet of $L_{\phi}$ uniform quantization levels:
-	\begin{equation*}
+	\begin{equation}
 		\mathcal{S}_{\phi} = \left\{e^{j\omega_0}, e^{j\omega_1}, \dots, e^{j\omega_{L_{\phi}-1}}\right\}, \quad \omega_l = \frac{2\pi l}{L_{\phi}}, \quad l \in \mathbb{Z}_{L_{\phi}-1}
-	\end{equation*}
+	\end{equation}
 	where $\mathbb{Z}_{L_{\phi}-1} \triangleq \{0, 1, \dots, L_{\phi}-1\}$.
 	
 	The transmission takes place over flat-fading channels. Let $\tilde{\mathbf{H}}_1 \in \mathbb{C}^{N_r \times N_{\mathrm{ris}}}$, $\tilde{\mathbf{H}}_2 \in \mathbb{C}^{N_{\mathrm{ris}} \times K}$, and $\tilde{\mathbf{H}}_d \in \mathbb{C}^{N_r \times K}$ denote the physical channel matrices corresponding to the RIS-to-BS link, the user-to-RIS link, and the direct user-to-BS link, respectively. The complex baseband received signal vector $\tilde{\mathbf{y}} \in \mathbb{C}^{N_r}$ at the BS is modeled as
 	\begin{equation}
-		\tilde{\mathbf{y}} = \left(\tilde{\mathbf{H}}_d + \tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\boldsymbol{\phi}}) \tilde{\mathbf{H}}_2\right)\tilde{\mathbf{s}} + \tilde{\mathbf{z}} \label{eq1}
+		\tilde{\mathbf{y}} = \left(\tilde{\mathbf{H}}_d + \tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\boldsymbol{\phi}}) \tilde{\mathbf{H}}_2\right)\tilde{\mathbf{s}} + \tilde{\mathbf{z}} = \tilde{\mathbf{H}}_{\mathrm{eff}} \tilde{\mathbf{s}} + \tilde{\mathbf{z}}, \label{eq1}
 	\end{equation}
-	where $\tilde{\mathbf{z}} \sim \mathcal{CN}(\mathbf{0}, \tilde{\sigma}_z^2 \mathbf{I}_{N_r})$ is an additive circular-symmetric complex Gaussian noise vector with variance $\tilde{\sigma}_z^2$. The overall system operates across two successive phases: (i) the training phase for RIS phase calibration, and (ii) the data transmission phase for symbol detection.
+	where $\tilde{\mathbf{H}}_{\mathrm{eff}} \triangleq \tilde{\mathbf{H}}_d + \tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\boldsymbol{\phi}}) \tilde{\mathbf{H}}_2 \in \mathbb{C}^{N_r \times K}$ represents the aggregate effective channel matrix, and $\tilde{\mathbf{z}} \sim \mathcal{CN}(\mathbf{0}, \tilde{\sigma}_z^2 \mathbf{I}_{N_r})$ is an additive circular-symmetric complex Gaussian noise vector with variance $\tilde{\sigma}_z^2$. 
+	
+	To facilitate the information-geometric formulation over real-valued exponential family manifolds [1], the complex-valued system in \eqref{eq1} is transformed into an equivalent augmented real-valued representation:
+	\begin{equation}
+		\mathbf{y} = \mathbf{H}_{\mathrm{eff}} \mathbf{s} + \mathbf{z}, \label{eq_real_sys}
+	\end{equation}
+	where the real-valued vectors and effective channel matrix are defined as
+	\begin{align}
+		\mathbf{y} &\triangleq \begin{bmatrix}
+			\mathcal{R}\{\tilde{\mathbf{y}}\} \\
+			\mathcal{I}\{\tilde{\mathbf{y}}\}
+		\end{bmatrix} \in \mathbb{R}^{2N_r}, \quad
+		\mathbf{s} \triangleq \begin{bmatrix}
+			\mathcal{R}\{\tilde{\mathbf{s}}\} \\
+			\mathcal{I}\{\tilde{\mathbf{s}}\}
+		\end{bmatrix} \in \mathbb{S}^{2K},  \nonumber \\
+		\mathbf{z} &\triangleq \begin{bmatrix}
+			\mathcal{R}\{\tilde{\mathbf{z}}\} \\
+			\mathcal{I}\{\tilde{\mathbf{z}}\}
+		\end{bmatrix} \in \mathbb{R}^{2N_r},  \nonumber \\
+		\mathbf{H}_\mathrm{eff} &\triangleq \begin{bmatrix}
+			\mathcal{R}\{\tilde{\mathbf{H}}_\mathrm{eff}\} & -\mathcal{I}\{\tilde{\mathbf{H}}_\mathrm{eff}\} \\
+			\mathcal{I}\{\tilde{\mathbf{H}}_\mathrm{eff}\} & \mathcal{R}\{\tilde{\mathbf{H}}_\mathrm{eff}\}
+		\end{bmatrix} \in \mathbb{R}^{2N_r \times 2K}. \label{eq:real_aug}
+	\end{align}
+	Here, $\mathbf{z} \sim \mathcal{N}(\mathbf{0}, \sigma_z^2 \mathbf{I}_{2N_r})$ with $\sigma_z^2 = \tilde{\sigma}_z^2 / 2$, and $\mathbb{S} = \{s^{(0)}, s^{(1)}, \dots, s^{(L-1)}\}$ denotes the real-valued pulse amplitude modulation (PAM) alphabet of size $L = \sqrt{\tilde{L}}$ corresponding to the in-phase and quadrature components of the $\tilde{L}$-QAM constellation.
+	
+	Crucially, reliable multiuser symbol detection via \eqref{eq_real_sys} relies directly on the accurate reconstruction of the effective channel matrix $\mathbf{H}_{\mathrm{eff}}$. Even when the individual physical link matrices ($\tilde{\mathbf{H}}_1$, $\tilde{\mathbf{H}}_2$, and $\tilde{\mathbf{H}}_d$) are acquired via standard channel sounding, any hardware ambiguity or estimation mismatch in the discrete RIS reflection phase vector $\tilde{\boldsymbol{\phi}}$ corrupts the cascaded component $\tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\boldsymbol{\phi}}) \tilde{\mathbf{H}}_2$. This resulting effective CSI mismatch induces severe uncompensated multiuser interference and phase rotation during data detection, leading to catastrophic symbol error floors. Consequently, the overall system operates across two successive stages within each coherence block: (i) the pilot-assisted training phase for RIS phase calibration, where the users transmit deterministic pilot symbol vectors $\tilde{\mathbf{s}}_{\mathrm{pilot}} \in \tilde{\mathbb{S}}^K$ drawn from the same $\tilde{L}$-QAM constellation alphabet and known \textit{a priori} to the BS, and (ii) the data transmission phase, where the calibrated phase estimate is utilized to reconstruct $\mathbf{H}_{\mathrm{eff}}$ for multiuser symbol detection.
+	\subsection{Problem Formulation for Discrete Phase Estimation (Training Phase)}
+	During the pilot-assisted training phase, the users transmit known pilot symbols $\tilde{\mathbf{s}}_{\mathrm{pilot}} \in \tilde{\mathbb{S}}^K$, and the channel matrices $\tilde{\mathbf{H}}_1$, $\tilde{\mathbf{H}}_2$, and $\tilde{\mathbf{H}}_d$ are assumed to be known via channel sounding. The goal is to estimate or verify the discrete hardware phase vector $\tilde{\boldsymbol{\phi}} \in \mathcal{S}_{\phi}^{N_{\mathrm{ris}}}$. Since both $\tilde{\mathbf{H}}_d$ and $\tilde{\mathbf{s}}_{\mathrm{pilot}}$ are known, by subtracting the deterministic direct-link contribution, the residual observation vector $\tilde{\mathbf{y}}_{\mathrm{res}} \in \mathbb{C}^{N_r}$ is expressed as
+	\begin{equation}
+		\tilde{\mathbf{y}}_{\mathrm{res}} \triangleq \tilde{\mathbf{y}} - \tilde{\mathbf{H}}_d \tilde{\mathbf{s}}_{\mathrm{pilot}} = \tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\boldsymbol{\phi}}) \tilde{\mathbf{H}}_2 \tilde{\mathbf{s}}_{\mathrm{pilot}} + \tilde{\mathbf{z}}. \label{eq2}
+	\end{equation}
+	Exploiting the commutativity of diagonal matrix products, we have $\mathrm{diag}(\tilde{\boldsymbol{\phi}})\tilde{\mathbf{H}}_2 \tilde{\mathbf{s}}_{\mathrm{pilot}} = \mathrm{diag}(\tilde{\mathbf{H}}_2 \tilde{\mathbf{s}}_{\mathrm{pilot}})\tilde{\boldsymbol{\phi}}$. Defining the effective phase measurement matrix as
+	\begin{equation}
+		\tilde{\mathbf{W}} \triangleq \tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\mathbf{H}}_2 \tilde{\mathbf{s}}_{\mathrm{pilot}}) \in \mathbb{C}^{N_r \times N_{\mathrm{ris}}},
+	\end{equation}
+	the residual signal in \eqref{eq2} reduces to an equivalent linear observation system:
+	\begin{equation}
+		\tilde{\mathbf{y}}_{\mathrm{res}} = \tilde{\mathbf{W}}\tilde{\boldsymbol{\phi}} + \tilde{\mathbf{z}}. \label{eq3}
+	\end{equation}
+	
+	To establish the information-geometric framework, we decompose \eqref{eq3} into an augmented real-valued model by defining $\mathbf{y}_{\mathrm{real}} \triangleq [\mathcal{R}\{\tilde{\mathbf{y}}_{\mathrm{res}}\}^T, \mathcal{I}\{\tilde{\mathbf{y}}_{\mathrm{res}}\}^T]^T \in \mathbb{R}^{2N_r}$, $\mathbf{z}_{\mathrm{real}} \triangleq [\mathcal{R}\{\tilde{\mathbf{z}}\}^T, \mathcal{I}\{\tilde{\mathbf{z}}\}^T]^T \sim \mathcal{N}(\mathbf{0}, \sigma_z^2 \mathbf{I}_{2N_r})$, and the real-valued measurement matrix $\mathbf{W} \in \mathbb{R}^{2N_r \times 2N_{\mathrm{ris}}}$:
+	\begin{align}
+		\mathbf{W} &\triangleq \begin{bmatrix}
+			\mathbf{W}_R & \mathbf{W}_I
+		\end{bmatrix}, \nonumber \\
+		\mathbf{W}_R &\triangleq \begin{bmatrix} \mathcal{R}\{\tilde{\mathbf{W}}\} \\ \mathcal{I}\{\tilde{\mathbf{W}}\} \end{bmatrix} \in \mathbb{R}^{2N_r \times N_{\mathrm{ris}}}, \nonumber \\ 
+		\mathbf{W}_I &\triangleq \begin{bmatrix} -\mathcal{I}\{\tilde{\mathbf{W}}\} \\ \mathcal{R}\{\tilde{\mathbf{W}}\} \end{bmatrix} \in \mathbb{R}^{2N_r \times N_{\mathrm{ris}}}.
+	\end{align}
+	Since the reflection coefficient of element $m$ takes the form $\tilde{\phi}_m = e^{j\omega_m} = \cos(\omega_m) + j\sin(\omega_m)$ with phase angle $\omega_m \in \{\omega_0, \dots, \omega_{L_{\phi}-1}\}$, we define the element-wise and stacked real-valued reflection vectors as
+	\begin{align}
+		\boldsymbol{\phi}_m &\triangleq \begin{bmatrix}
+			\mathcal{R}\{\tilde{\phi}_m\} \\
+			\mathcal{I}\{\tilde{\phi}_m\}
+		\end{bmatrix}=\begin{bmatrix}
+			\cos(\omega_m) \\
+			\sin(\omega_m)
+		\end{bmatrix} \in \mathbb{R}^2, \\
+		\boldsymbol{\phi} &\triangleq \begin{bmatrix}
+			\mathcal{R}\{\tilde{\boldsymbol{\phi}}\} \\
+			\mathcal{I}\{\tilde{\boldsymbol{\phi}}\}
+		\end{bmatrix}
+		= \begin{bmatrix}
+			\cos(\boldsymbol{\omega}) \\
+			\sin(\boldsymbol{\omega})
+		\end{bmatrix} \in \mathbb{R}^{2N_\mathrm{ris}},
+	\end{align}
+	where $\boldsymbol{\omega} \triangleq [\omega_1, \dots, \omega_{N_{\mathrm{ris}}}]^T$. Now, the real-valued residual observation vector is expressed as
+	\begin{equation}
+		\mathbf{y}_{\mathrm{real}} = \mathbf{W}\boldsymbol{\phi} + \mathbf{z}_{\mathrm{real}} = \mathbf{W}_R\,\cos(\boldsymbol{\omega}) + \mathbf{W}_I\,\sin(\boldsymbol{\omega}) + \mathbf{z}_{\mathrm{real}} \in \mathbb{R}^{2N_r}.
+	\end{equation}
+	By evaluating the deterministic real-valued channel response across all $L_{\phi}$ discrete phase levels for every RIS element, we construct the phase-response tensor $\mathbf{H}_{\phi} \in \mathbb{R}^{2N_r \times N_{\mathrm{ris}} \times L_{\phi}}$, whose $(n, m, l)$-th entry is defined as
+	\begin{equation}
+		H_{\phi}(n, m, l) \triangleq W_R(n, m)\cos(\omega_l) + W_I(n, m)\sin(\omega_l), \label{eq4}
+	\end{equation}
+	for observation dimension $n \in \mathbb{Z}_{2N_r}^+$, RIS element $m \in \mathbb{Z}_{N_{\mathrm{ris}}}^+$, and discrete phase index $l \in \mathbb{Z}_{L_{\phi}-1}$.
+	
+	Accordingly, when the $m$-th RIS element adopts the $l_m$-th discrete phase state $\tilde{\phi}_m = e^{j\omega_{l_m}}$ (with $l_m \in \mathbb{Z}_{L_{\phi}-1}$), the $n$-th component of the real-valued received vector is given by
+	\begin{equation}
+		y_{\mathrm{real},n} = \sum_{m=1}^{N_{\mathrm{ris}}} H_{\phi}(n, m, l_m) + z_{\mathrm{real},n}.
+	\end{equation}
+	The optimal maximum \textit{a posteriori} (MAP) discrete phase estimator is formulated as
+	\begin{equation}
+		\hat{\boldsymbol{\phi}}_{\mathrm{MAP}} = \arg\max_{\tilde{\boldsymbol{\phi}} \in \mathcal{S}_{\phi}^{N_{\mathrm{ris}}}} p(\tilde{\boldsymbol{\phi}} \mid \mathbf{y}_{\mathrm{real}}), \label{eq5}
+	\end{equation}
+	which requires an exhaustive search over $L_{\phi}^{N_{\mathrm{ris}}}$ candidate vectors. As demonstrated in \cite{b1} and \cite{b2}, evaluating \eqref{eq5} is NP-hard and computationally infeasible for large-scale surfaces. In Section III, we reformulate this intractable joint search as obtaining the marginal \textit{a posteriori} distributions $p_m(\tilde{\phi}_m \mid \mathbf{y}_{\mathrm{real}})$ to perform maximization of the \textit{a posteriori} marginals (MPM) estimation:
+	\begin{equation*}
+		\hat{\phi}_{m,\mathrm{MPM}} = \arg\max_{\tilde{\phi}_m \in \mathcal{S}_{\phi}} p_m(\tilde{\phi}_m \mid \mathbf{y}_{\mathrm{real}}), \quad m \in \mathbb{Z}_{N_{\mathrm{ris}}}^+.
+	\end{equation*}
 	
 	\begin{thebibliography}{00}
 		\bibitem{b1} J. Yang, Y. Chen, X. Gao, D. T. M. Slock, and X.-G. Xia, ``Signal detection for ultra-massive MIMO: An information geometry approach,'' \textit{IEEE Trans. Signal Process.}, vol. 72, pp. 824--838, 2024, doi: 10.1109/TSP.2024.3358617.
