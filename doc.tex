@@ -41,144 +41,144 @@
 	
 	\maketitle
 	
-	\begin{abstract}
-		In reconfigurable intelligent surface (RIS)-assisted massive MIMO systems, practical hardware constraints restrict reflection phases to a discrete alphabet, turning phase estimation into an intractable problem that suffers from severe ambiguities in overloaded regimes. Furthermore, cascaded reflection links induce strong spatial channel correlation, causing conventional scalar detectors to break down. To address these challenges, this paper proposes a unified information geometry approach (IGA) for discrete phase estimation and signal detection. For phase calibration, an online IGA estimator accumulates multi-pilot evidence to stably recover the discrete phase states without exhaustive search. For data detection, a multivariate IGA (M-IGA) detector resolves cross-antenna spatial coupling. Simulation results show that the proposed phase estimator approaches genie-aided local ML accuracy, while the M-IGA detector attains a 10 dB gain over linear MMSE detection and matches the performance of perfect phase knowledge with minimal pilot overhead.
-	\end{abstract}
-	
-	\begin{IEEEkeywords}
-		Reconfigurable intelligent surface (RIS), MIMO signal detection, discrete phase estimation, Bayesian inference, information geometry, m-projection.
-	\end{IEEEkeywords}
-	
-	\section{Introduction}
-	Driven by the stringent spectral and energy efficiency demands of beyond fifth-generation (B5G) and sixth-generation (6G) wireless networks, ultra-massive multiple-input multiple-output (UM-MIMO) and extremely large-scale antenna arrays (ELAA) are envisioned to deploy hundreds or thousands of antennas at the base station (BS) to serve tens or hundreds of concurrent users simultaneously \cite{b2,b3,b4,b5}. Despite the immense spatial multiplexing gains of UM-MIMO, reliably detecting the multiuser transmitted symbols in the presence of severe co-channel interference poses a major computational challenge as the array dimension scales up. The optimal maximum-likelihood (ML) and maximum \textit{a posteriori} (MAP) detectors require an exhaustive search over all possible transmit vectors, which is non-deterministic polynomial-time hard (NP-hard) and computationally prohibitive for large-scale systems \cite{b10}. Classical linear detectors, such as the linear minimum mean-squared error (LMMSE) detector, along with iterative gradient-based and lattice-reduction schemes \cite{b12,b13}, achieve polynomial-time complexity; however, linear filtering yields biased estimates \cite{b10} and suffers from severe performance degradation in densely loaded multiuser scenarios and high-order modulation schemes \cite{b11}. To bridge this gap, suboptimal Bayesian message-passing approaches—including expectation propagation (EP), belief propagation (BP), and approximate message passing (AMP)—have attracted significant interest \cite{b11,b14,b15,b16,b17}. Nevertheless, EP requires computationally prohibitive high-dimensional matrix inversions at every iteration \cite{b11,b15}, while BP and AMP rely heavily on independent and identically distributed (i.i.d.) channel entries and exhibit catastrophic divergence in ill-conditioned or spatially correlated channels \cite{b14,b16,b17}.
-	
-	Information geometry, pioneered by Rao \cite{b18} and systematically established by Amari \cite{b19} and \v{C}encov \cite{b20}, provides an intrinsic differential-geometric framework for statistical inference. By treating a parameterized family of probability distributions as a Riemannian manifold equipped with the Fisher information matrix (FIM) as its metric tensor, information geometry enables coordinate-invariant analysis and Kullback-Leibler (K-L) divergence projections between probability distributions \cite{b19,b21,b22}. This geometric perspective has offered profound theoretical insights into stochastic reasoning and free-energy minimization \cite{b22}, as well as massive MIMO channel estimation \cite{b25,b26}. Building on this foundation, Yang \textit{et al.} \cite{b1} recently proposed an information geometry approach for signal detection (IGA-SD) in conventional UM-MIMO systems. By embedding the discrete symbol priors into an exponential family manifold, IGA-SD defines an $e$-flat objective manifold (OBM) of factorized marginal distributions alongside $2N_r$ auxiliary manifolds (AMs), each retaining an individual scalar antenna observation constraint. The extraction of \textit{a posteriori} symbol marginals is thereby transformed into an iterative sequence of $m$-projections from the AMs onto the OBM. Coupled with Lyapunov's central limit theorem (CLT), the $m$-projection updates in \cite{b1} are derived in closed form without requiring any matrix inversion, achieving near-MAP detection accuracy with low complexity in conventional i.i.d. Rayleigh fading channels.
-	
-	To further enhance link reliability and coverage in B5G/6G networks, reconfigurable intelligent surfaces (RISs) have emerged as an energy-efficient paradigm to dynamically reshape the wireless propagation environment \cite{b8}. By adjusting the phase shifts of a planar array of nearly passive reflecting elements, an RIS establishes favorable cascaded virtual line-of-sight links between the BS and user terminals, bypassing physical blockages without requiring dedicated radio-frequency (RF) chains. However, operating an RIS-assisted UM-MIMO system requires addressing two intertwined inference tasks: calibrating the RIS reflection phases during pilot training and detecting the multiuser data symbols over the resulting cascaded channel. In practical hardware implementations, continuous phase control is infeasible due to circuit cost and power dissipation; instead, each reflecting element is constrained to a finite discrete alphabet of $L_{\phi}$ quantization levels. Under this discrete setup, verifying or estimating the RIS phases via uplink training pilots—much like multiuser data detection—constitutes a challenging non-linear integer inverse problem. Optimal ML or MAP phase estimation requires an exhaustive search over $L_{\phi}^{N_{\mathrm{ris}}}$ candidate states for an $N_{\mathrm{ris}}$-element surface (e.g., evaluating $100^{64}$ states for $N_{\mathrm{ris}}=64$ and $L_{\phi}=100$), while optimal data detection searches over $\tilde{L}^K$ symbol vectors. Consequently, developing a low-complexity suboptimal inference framework grounded in the information-geometric principles of \cite{b1} is highly compelling for RIS-assisted UM-MIMO systems.
-	
-	However, directly adopting the conventional IGA-SD framework \cite{b1} in RIS-assisted UM-MIMO networks reveals two fundamental mathematical bottlenecks:
-	\begin{enumerate}
-		\item \textit{Cascaded Bilinearity and Overloaded Phase Ambiguity:} Unlike conventional symbol detection \cite{b1} where transmit symbols enter the observation model linearly across known constellation grids, RIS reflection phases modulate the cascaded signal bilinearly on the unit circle. Furthermore, when the number of reflecting elements equals or exceeds the real receiver observation dimension (i.e., the overloaded regime $N_{\mathrm{ris}} \ge 2N_r$, where $N_r$ is the number of BS receive antennas), a single-pilot observation provides insufficient degrees of freedom to resolve the discrete phase states, causing standard single-shot message-passing iterations to suffer from severe ill-conditioning and mean-field collapse.
-		\item \textit{Breakdown of Scalar Independence under Spatial Channel Correlation:} Standard IGA-SD \cite{b1} decouples the observation vector across the BS antennas into independent scalar auxiliary manifolds, implicitly assuming that interference and noise across antennas are conditionally separable. In RIS-assisted systems, the cascaded channel matrix inherently exhibits strong cross-antenna spatial correlation. This spatial coupling violates the scalar observation assumption of classical IGA-SD \cite{b1}, leading to severe error floors and oscillatory divergence.
-	\end{enumerate}
-	
-	To address these critical limitations, this paper extends the information-geometric framework of \cite{b1} and proposes a unified approach covering both discrete RIS phase estimation and robust signal detection over correlated channels. The primary contributions of this paper are summarized as follows:
-	\begin{itemize}
-		\item \textbf{Linearized Formulation and $m$-Projection for Discrete Phase Calibration:} By exploiting the commutativity of diagonal matrix products, we transform the non-linear cascaded RIS link into an equivalent linear observation system. We formulate a real-valued phase-response tensor $\mathbf{H}_{\mathrm{eval}}$ and map discrete phase estimation onto an exponential family manifold. Using the Lyapunov CLT, closed-form $m$-projection update rules are derived, enabling exact marginal estimation without matrix inversion.
-		\item \textbf{Multi-Pilot Persistent Log-Evidence Accumulation:} To stabilize estimation in the overloaded regime ($N_{\mathrm{ris}} \ge 2N_r$), we decouple transient intra-pilot message updates from persistent inter-pilot beliefs. By accumulating log-evidence sequentially across successive pilots, the proposed estimator eliminates mean-field collapse and converges to near-ML performance.
-		\item \textbf{Multivariate IGA (M-IGA) Detector in the Gram Domain:} To conquer spatial correlation during data detection, we design the M-IGA detector. Instead of scalar antenna decomposition, M-IGA models the entire observation vector as a continuous multivariate Gaussian distribution with a full spatial covariance matrix. Cavity distributions are derived analytically via the Sherman-Morrison formula, and $m$-projections are evaluated under the Mahalanobis distance.
-		\item \textbf{Complexity Reduction via Woodbury Identity:} By reformulating the M-IGA updates into the Gram domain using the Woodbury matrix identity, the heavy $\mathcal{O}(N_r^3)$ covariance inversion is eliminated. The inner inversion is reduced to a small $2K \times 2K$ matrix per iteration, achieving exceptional scalability for ultra-massive receive arrays.
-	\end{itemize}
-	
-	\textit{Organization and Notations:} The remainder of this paper is organized as follows. Section II introduces the system model and problem formulation. Section III details the proposed online IGA discrete phase estimator. Section IV presents the multivariate IGA detector in the Gram domain. Simulation results are provided in Section V, and Section VI concludes the paper.
-	
-	Upper and lower case boldface letters denote matrices and column vectors, respectively. $\mathcal{R}\{\cdot\}$ and $\mathcal{I}\{\cdot\}$ denote the real and imaginary parts of a complex quantity. $(\cdot)^T$ and $(\cdot)^H$ denote transpose and conjugate transpose, respectively. $\mathrm{diag}(\mathbf{x})$ denotes the diagonal matrix with $\mathbf{x}$ along its main diagonal. $\mathbf{I}_N$ is the $N \times N$ identity matrix. $D_{\mathrm{KL}}(p \parallel q)$ represents the Kullback-Leibler (K-L) divergence from $p$ to $q$.
-	
-	\section{System Model and Problem Formulation}
-	
-	\subsection{System Configuration and Channel Model}
-	Consider an uplink RIS-assisted multiuser UM-MIMO system where a BS equipped with an ultra-massive antenna array of $N_r$ antennas serves $K$ single-antenna users simultaneously with the assistance of an RIS comprising $N_{\mathrm{ris}}$ nearly passive reflecting elements. Denote the transmitted symbol vector of all users as $\tilde{\mathbf{s}} \triangleq [\tilde{s}_1, \tilde{s}_2, \dots, \tilde{s}_K]^T \in \tilde{\mathbb{S}}^K$, where $\tilde{s}_k \in \tilde{\mathbb{S}}$, $k \in \mathbb{Z}_K^+ \triangleq \{1, 2, \dots, K\}$, represents the transmit symbol of user $k$. The constellation alphabet is denoted by $\tilde{\mathbb{S}} = \{\tilde{s}^{(0)}, \tilde{s}^{(1)}, \dots, \tilde{s}^{(\tilde{L}-1)}\}$ with modulation order $\tilde{L}$. We assume symmetric $\tilde{L}$-QAM modulation with statistically independent transmit symbols normalized to unit average power, i.e., $\mathbb{E}\{|\tilde{s}_k|^2\} = 1$ for all $k \in \mathbb{Z}_K^+$.
-	
-	The phase-shift configuration of the RIS is parameterized by the vector $\tilde{\boldsymbol{\phi}} \triangleq [\tilde{\phi}_1, \tilde{\phi}_2, \dots, \tilde{\phi}_{N_{\mathrm{ris}}}]^T \in \mathcal{S}_{\phi}^{N_{\mathrm{ris}}}$, where $\tilde{\phi}_m$ is the reflection coefficient of the $m$-th RIS element. Due to hardware quantization constraints, the phase shift of each element is restricted to a discrete alphabet of $L_{\phi}$ uniform quantization levels:
-	\begin{equation}
-		\mathcal{S}_{\phi} = \left\{e^{j\omega_0}, e^{j\omega_1}, \dots, e^{j\omega_{L_{\phi}-1}}\right\}, \quad \omega_l = \frac{2\pi l}{L_{\phi}}, \quad l \in \mathbb{Z}_{L_{\phi}-1}
-	\end{equation}
-	where $\mathbb{Z}_{L_{\phi}-1} \triangleq \{0, 1, \dots, L_{\phi}-1\}$.
-	
-	The transmission takes place over flat-fading channels. Let $\tilde{\mathbf{H}}_1 \in \mathbb{C}^{N_r \times N_{\mathrm{ris}}}$, $\tilde{\mathbf{H}}_2 \in \mathbb{C}^{N_{\mathrm{ris}} \times K}$, and $\tilde{\mathbf{H}}_d \in \mathbb{C}^{N_r \times K}$ denote the physical channel matrices corresponding to the RIS-to-BS link, the user-to-RIS link, and the direct user-to-BS link, respectively. The complex baseband received signal vector $\tilde{\mathbf{y}} \in \mathbb{C}^{N_r}$ at the BS is modeled as
-	\begin{equation}
-		\tilde{\mathbf{y}} = \left(\tilde{\mathbf{H}}_d + \tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\boldsymbol{\phi}}) \tilde{\mathbf{H}}_2\right)\tilde{\mathbf{s}} + \tilde{\mathbf{z}} = \tilde{\mathbf{H}}_{\mathrm{eff}} \tilde{\mathbf{s}} + \tilde{\mathbf{z}}, \label{eq1}
-	\end{equation}
-	where $\tilde{\mathbf{H}}_{\mathrm{eff}} \triangleq \tilde{\mathbf{H}}_d + \tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\boldsymbol{\phi}}) \tilde{\mathbf{H}}_2 \in \mathbb{C}^{N_r \times K}$ represents the aggregate effective channel matrix, and $\tilde{\mathbf{z}} \sim \mathcal{CN}(\mathbf{0}, \tilde{\sigma}_z^2 \mathbf{I}_{N_r})$ is an additive circular-symmetric complex Gaussian noise vector with variance $\tilde{\sigma}_z^2$. 
-	
-	To facilitate the information-geometric formulation over real-valued exponential family manifolds [1], the complex-valued system in \eqref{eq1} is transformed into an equivalent augmented real-valued representation:
-	\begin{equation}
-		\mathbf{y} = \mathbf{H}_{\mathrm{eff}} \mathbf{s} + \mathbf{z}, \label{eq_real_sys}
-	\end{equation}
-	where the real-valued vectors and effective channel matrix are defined as
-	\begin{align}
-		\mathbf{y} &\triangleq \begin{bmatrix}
-			\mathcal{R}\{\tilde{\mathbf{y}}\} \\
-			\mathcal{I}\{\tilde{\mathbf{y}}\}
-		\end{bmatrix} \in \mathbb{R}^{2N_r}, \quad
-		\mathbf{s} \triangleq \begin{bmatrix}
-			\mathcal{R}\{\tilde{\mathbf{s}}\} \\
-			\mathcal{I}\{\tilde{\mathbf{s}}\}
-		\end{bmatrix} \in \mathbb{S}^{2K},  \nonumber \\
-		\mathbf{z} &\triangleq \begin{bmatrix}
-			\mathcal{R}\{\tilde{\mathbf{z}}\} \\
-			\mathcal{I}\{\tilde{\mathbf{z}}\}
-		\end{bmatrix} \in \mathbb{R}^{2N_r},  \nonumber \\
-		\mathbf{H}_\mathrm{eff} &\triangleq \begin{bmatrix}
-			\mathcal{R}\{\tilde{\mathbf{H}}_\mathrm{eff}\} & -\mathcal{I}\{\tilde{\mathbf{H}}_\mathrm{eff}\} \\
-			\mathcal{I}\{\tilde{\mathbf{H}}_\mathrm{eff}\} & \mathcal{R}\{\tilde{\mathbf{H}}_\mathrm{eff}\}
-		\end{bmatrix} \in \mathbb{R}^{2N_r \times 2K}. \label{eq:real_aug}
-	\end{align}
-	Here, $\mathbf{z} \sim \mathcal{N}(\mathbf{0}, \sigma_z^2 \mathbf{I}_{2N_r})$ with $\sigma_z^2 = \tilde{\sigma}_z^2 / 2$, and $\mathbb{S} = \{s^{(0)}, s^{(1)}, \dots, s^{(L-1)}\}$ denotes the real-valued pulse amplitude modulation (PAM) alphabet of size $L = \sqrt{\tilde{L}}$ corresponding to the in-phase and quadrature components of the $\tilde{L}$-QAM constellation.
-	
-	Crucially, reliable multiuser symbol detection via \eqref{eq_real_sys} relies directly on the accurate reconstruction of the effective channel matrix $\mathbf{H}_{\mathrm{eff}}$. Even when the individual physical link matrices ($\tilde{\mathbf{H}}_1$, $\tilde{\mathbf{H}}_2$, and $\tilde{\mathbf{H}}_d$) are acquired via standard channel sounding, any hardware ambiguity or estimation mismatch in the discrete RIS reflection phase vector $\tilde{\boldsymbol{\phi}}$ corrupts the cascaded component $\tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\boldsymbol{\phi}}) \tilde{\mathbf{H}}_2$. This resulting effective CSI mismatch induces severe uncompensated multiuser interference and phase rotation during data detection, leading to catastrophic symbol error floors. Consequently, the overall system operates across two successive stages within each coherence block: (i) the pilot-assisted training phase for RIS phase calibration, where the users transmit deterministic pilot symbol vectors $\tilde{\mathbf{s}}_{\mathrm{pilot}} \in \tilde{\mathbb{S}}^K$ drawn from the same $\tilde{L}$-QAM constellation alphabet and known \textit{a priori} to the BS, and (ii) the data transmission phase, where the calibrated phase estimate is utilized to reconstruct $\mathbf{H}_{\mathrm{eff}}$ for multiuser symbol detection.
-	\subsection{Problem Formulation for Discrete Phase Estimation (Training Phase)}
-	During the pilot-assisted training phase, the users transmit known pilot symbols $\tilde{\mathbf{s}}_{\mathrm{pilot}} \in \tilde{\mathbb{S}}^K$, and the channel matrices $\tilde{\mathbf{H}}_1$, $\tilde{\mathbf{H}}_2$, and $\tilde{\mathbf{H}}_d$ are assumed to be known via channel sounding. The goal is to estimate or verify the discrete hardware phase vector $\tilde{\boldsymbol{\phi}} \in \mathcal{S}_{\phi}^{N_{\mathrm{ris}}}$. Since both $\tilde{\mathbf{H}}_d$ and $\tilde{\mathbf{s}}_{\mathrm{pilot}}$ are known, by subtracting the deterministic direct-link contribution, the residual observation vector $\tilde{\mathbf{y}}_{\mathrm{res}} \in \mathbb{C}^{N_r}$ is expressed as
-	\begin{equation}
-		\tilde{\mathbf{y}}_{\mathrm{res}} \triangleq \tilde{\mathbf{y}} - \tilde{\mathbf{H}}_d \tilde{\mathbf{s}}_{\mathrm{pilot}} = \tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\boldsymbol{\phi}}) \tilde{\mathbf{H}}_2 \tilde{\mathbf{s}}_{\mathrm{pilot}} + \tilde{\mathbf{z}}. \label{eq2}
-	\end{equation}
-	Exploiting the commutativity of diagonal matrix products, we have $\mathrm{diag}(\tilde{\boldsymbol{\phi}})\tilde{\mathbf{H}}_2 \tilde{\mathbf{s}}_{\mathrm{pilot}} = \mathrm{diag}(\tilde{\mathbf{H}}_2 \tilde{\mathbf{s}}_{\mathrm{pilot}})\tilde{\boldsymbol{\phi}}$. Defining the effective phase measurement matrix as
-	\begin{equation}
-		\tilde{\mathbf{W}} \triangleq \tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\mathbf{H}}_2 \tilde{\mathbf{s}}_{\mathrm{pilot}}) \in \mathbb{C}^{N_r \times N_{\mathrm{ris}}},
-	\end{equation}
-	the residual signal in \eqref{eq2} reduces to an equivalent linear observation system:
-	\begin{equation}
-		\tilde{\mathbf{y}}_{\mathrm{res}} = \tilde{\mathbf{W}}\tilde{\boldsymbol{\phi}} + \tilde{\mathbf{z}}. \label{eq3}
-	\end{equation}
-	
-	To establish the information-geometric framework, we decompose \eqref{eq3} into an augmented real-valued model by defining $\mathbf{y}_{\mathrm{real}} \triangleq [\mathcal{R}\{\tilde{\mathbf{y}}_{\mathrm{res}}\}^T, \mathcal{I}\{\tilde{\mathbf{y}}_{\mathrm{res}}\}^T]^T \in \mathbb{R}^{2N_r}$, $\mathbf{z}_{\mathrm{real}} \triangleq [\mathcal{R}\{\tilde{\mathbf{z}}\}^T, \mathcal{I}\{\tilde{\mathbf{z}}\}^T]^T \sim \mathcal{N}(\mathbf{0}, \sigma_z^2 \mathbf{I}_{2N_r})$, and the real-valued measurement matrix $\mathbf{W} \in \mathbb{R}^{2N_r \times 2N_{\mathrm{ris}}}$:
-	\begin{align}
-		\mathbf{W} &\triangleq \begin{bmatrix}
-			\mathbf{W}_R & \mathbf{W}_I
-		\end{bmatrix}, \nonumber \\
-		\mathbf{W}_R &\triangleq \begin{bmatrix} \mathcal{R}\{\tilde{\mathbf{W}}\} \\ \mathcal{I}\{\tilde{\mathbf{W}}\} \end{bmatrix} \in \mathbb{R}^{2N_r \times N_{\mathrm{ris}}}, \nonumber \\ 
-		\mathbf{W}_I &\triangleq \begin{bmatrix} -\mathcal{I}\{\tilde{\mathbf{W}}\} \\ \mathcal{R}\{\tilde{\mathbf{W}}\} \end{bmatrix} \in \mathbb{R}^{2N_r \times N_{\mathrm{ris}}}.
-	\end{align}
-	Since the reflection coefficient of element $m$ takes the form $\tilde{\phi}_m = e^{j\omega_m} = \cos(\omega_m) + j\sin(\omega_m)$ with phase angle $\omega_m \in \{\omega_0, \dots, \omega_{L_{\phi}-1}\}$, we define the element-wise and stacked real-valued reflection vectors as
-	\begin{align}
-		\boldsymbol{\phi}_m &\triangleq \begin{bmatrix}
-			\mathcal{R}\{\tilde{\phi}_m\} \\
-			\mathcal{I}\{\tilde{\phi}_m\}
-		\end{bmatrix}=\begin{bmatrix}
-			\cos(\omega_m) \\
-			\sin(\omega_m)
-		\end{bmatrix} \in \mathbb{R}^2, \\
-		\boldsymbol{\phi} &\triangleq \begin{bmatrix}
-			\mathcal{R}\{\tilde{\boldsymbol{\phi}}\} \\
-			\mathcal{I}\{\tilde{\boldsymbol{\phi}}\}
-		\end{bmatrix}
-		= \begin{bmatrix}
-			\cos(\boldsymbol{\omega}) \\
-			\sin(\boldsymbol{\omega})
-		\end{bmatrix} \in \mathbb{R}^{2N_\mathrm{ris}},
-	\end{align}
-	where $\boldsymbol{\omega} \triangleq [\omega_1, \dots, \omega_{N_{\mathrm{ris}}}]^T$. Now, the real-valued residual observation vector is expressed as
-	\begin{equation}
-		\mathbf{y}_{\mathrm{real}} = \mathbf{W}\boldsymbol{\phi} + \mathbf{z}_{\mathrm{real}} = \mathbf{W}_R\,\cos(\boldsymbol{\omega}) + \mathbf{W}_I\,\sin(\boldsymbol{\omega}) + \mathbf{z}_{\mathrm{real}} \in \mathbb{R}^{2N_r}.
-	\end{equation}
-	By evaluating the deterministic real-valued channel response across all $L_{\phi}$ discrete phase levels for every RIS element, we construct the phase-response tensor $\mathbf{H}_{\phi} \in \mathbb{R}^{2N_r \times N_{\mathrm{ris}} \times L_{\phi}}$, whose $(n, m, l)$-th entry is defined as
-	\begin{equation}
-		H_{\phi}(n, m, l) \triangleq W_R(n, m)\cos(\omega_l) + W_I(n, m)\sin(\omega_l), \label{eq4}
-	\end{equation}
-	for observation dimension $n \in \mathbb{Z}_{2N_r}^+$, RIS element $m \in \mathbb{Z}_{N_{\mathrm{ris}}}^+$, and discrete phase index $l \in \mathbb{Z}_{L_{\phi}-1}$.
-	
-	Accordingly, when the $m$-th RIS element adopts the $l_m$-th discrete phase state $\tilde{\phi}_m = e^{j\omega_{l_m}}$ (with $l_m \in \mathbb{Z}_{L_{\phi}-1}$), the $n$-th component of the real-valued received vector is given by
-	\begin{equation}
-		y_{\mathrm{real},n} = \sum_{m=1}^{N_{\mathrm{ris}}} H_{\phi}(n, m, l_m) + z_{\mathrm{real},n}.
-	\end{equation}
-	The optimal maximum \textit{a posteriori} (MAP) discrete phase estimator is formulated as
-	\begin{equation}
-		\hat{\boldsymbol{\phi}}_{\mathrm{MAP}} = \arg\max_{\tilde{\boldsymbol{\phi}} \in \mathcal{S}_{\phi}^{N_{\mathrm{ris}}}} p(\tilde{\boldsymbol{\phi}} \mid \mathbf{y}_{\mathrm{real}}), \label{eq5}
-	\end{equation}
-	which requires an exhaustive search over $L_{\phi}^{N_{\mathrm{ris}}}$ candidate vectors. As demonstrated in \cite{b1} and \cite{b2}, evaluating \eqref{eq5} is NP-hard and computationally infeasible for large-scale surfaces. In Section III, we reformulate this intractable joint search as obtaining the marginal \textit{a posteriori} distributions $p_m(\tilde{\phi}_m \mid \mathbf{y}_{\mathrm{real}})$ to perform maximization of the \textit{a posteriori} marginals (MPM) estimation:
-	\begin{equation*}
-		\hat{\phi}_{m,\mathrm{MPM}} = \arg\max_{\tilde{\phi}_m \in \mathcal{S}_{\phi}} p_m(\tilde{\phi}_m \mid \mathbf{y}_{\mathrm{real}}), \quad m \in \mathbb{Z}_{N_{\mathrm{ris}}}^+.
-	\end{equation*}
+\begin{abstract}
+	In reconfigurable intelligent surface (RIS)-assisted ultra-massive MIMO systems, reliable signal detection depends critically on accurate knowledge of the cascaded effective channel. However, practical hardware constraints restrict RIS reflection phases to a discrete alphabet, turning phase calibration into an intractable problem that suffers from severe ambiguities in overloaded regimes. Any phase estimation mismatch corrupts the reconstructed channel and degrades multiuser detection performance. To address this challenge, this paper proposes an online information geometry approach (IGA) for discrete RIS phase calibration and uplink signal detection. By casting discrete phase recovery into iterative $m$-projections on an exponential family manifold, the proposed estimator accumulates multi-pilot log-evidence to stably recover the hardware phases without exhaustive search or matrix inversions. The calibrated phases are then utilized to reconstruct the effective channel for linear minimum mean-squared error (LMMSE) detection. Simulation results demonstrate that the proposed estimator approaches genie-aided local maximum-likelihood (ML) accuracy and matches the detection performance of perfect phase knowledge with minimal pilot overhead.
+\end{abstract}
+
+\begin{IEEEkeywords}
+	Reconfigurable intelligent surface (RIS), MIMO signal detection, discrete phase estimation, Bayesian inference, information geometry, $m$-projection.
+\end{IEEEkeywords}
+
+\section{Introduction}
+Driven by the stringent spectral and energy efficiency demands of beyond fifth-generation (B5G) and sixth-generation (6G) wireless networks, ultra-massive multiple-input multiple-output (UM-MIMO) and extremely large-scale antenna arrays (ELAA) are envisioned to deploy hundreds or thousands of antennas at the base station (BS) to serve tens or hundreds of concurrent users simultaneously \cite{b2,b3,b4,b5}. Despite the immense spatial multiplexing gains of UM-MIMO, reliably detecting the multiuser transmitted symbols in the presence of severe co-channel interference poses a major computational challenge as the array dimension scales up. The optimal maximum-likelihood (ML) and maximum \textit{a posteriori} (MAP) detectors require an exhaustive search over all possible transmit vectors, which is non-deterministic polynomial-time hard (NP-hard) and computationally prohibitive for large-scale systems \cite{b10}. Classical linear detectors, such as the linear minimum mean-squared error (LMMSE) detector, along with iterative gradient-based and lattice-reduction schemes \cite{b12,b13}, achieve polynomial-time complexity; however, linear filtering yields biased estimates \cite{b10} and suffers from performance degradation in densely loaded scenarios and high-order modulation schemes \cite{b11}. To bridge this gap, suboptimal Bayesian message-passing approaches—including expectation propagation (EP), belief propagation (BP), and approximate message passing (AMP)—have attracted significant interest \cite{b11,b14,b15,b16,b17}. Nevertheless, EP requires computationally prohibitive high-dimensional matrix inversions at every iteration \cite{b11,b15}, while BP and AMP rely heavily on independent and identically distributed (i.i.d.) channel entries and exhibit divergence in ill-conditioned channels \cite{b14,b16,b17}.
+
+Information geometry, pioneered by Rao \cite{b18} and systematically established by Amari \cite{b19} and \v{C}encov \cite{b20}, provides an intrinsic differential-geometric framework for statistical inference. By treating a parameterized family of probability distributions as a Riemannian manifold equipped with the Fisher information matrix (FIM) as its metric tensor, information geometry enables coordinate-invariant analysis and Kullback-Leibler (K-L) divergence projections between probability distributions \cite{b19,b21,b22}. This geometric perspective has offered profound theoretical insights into stochastic reasoning and free-energy minimization \cite{b22}, as well as massive MIMO channel estimation \cite{b25,b26}. Building on this foundation, Yang \textit{et al.} \cite{b1} recently proposed an information geometry approach for signal detection (IGA-SD) in conventional UM-MIMO systems. By embedding the discrete symbol priors into an exponential family manifold, IGA-SD defines an $e$-flat objective manifold (OBM) of factorized marginal distributions alongside $2N_r$ auxiliary manifolds (AMs), each retaining an individual scalar antenna observation constraint. The extraction of \textit{a posteriori} symbol marginals is thereby transformed into an iterative sequence of $m$-projections from the AMs onto the OBM. Coupled with Lyapunov's central limit theorem (CLT), the $m$-projection updates in \cite{b1} are derived in closed form without requiring any matrix inversion, achieving near-MAP inference accuracy with low complexity.
+
+To further enhance link reliability and coverage in B5G/6G networks, reconfigurable intelligent surfaces (RISs) have emerged as an energy-efficient paradigm to dynamically reshape the wireless propagation environment \cite{b8}. By adjusting the phase shifts of a planar array of nearly passive reflecting elements, an RIS establishes favorable cascaded virtual line-of-sight links between the BS and user terminals, bypassing physical blockages without requiring dedicated radio-frequency (RF) chains. However, operating an RIS-assisted UM-MIMO system requires addressing two intertwined tasks: calibrating the unknown RIS reflection phases during pilot training and subsequently detecting the multiuser data symbols over the resulting cascaded channel. Even when a low-complexity detector such as LMMSE is employed for data recovery, its performance depends critically on the accurate reconstruction of the effective cascaded channel. In practical hardware implementations, continuous phase control is infeasible due to circuit cost and power dissipation; instead, each reflecting element is constrained to a finite discrete alphabet of $L_{\phi}$ quantization levels. Under this discrete setup, verifying or estimating the hardware RIS phases via uplink training pilots—much like discrete multiuser symbol detection in \cite{b1}—constitutes a challenging non-linear integer inverse problem. Optimal ML or MAP phase estimation requires an exhaustive search over $L_{\phi}^{N_{\mathrm{ris}}}$ candidate states for an $N_{\mathrm{ris}}$-element surface (e.g., evaluating $100^{64}$ states for $N_{\mathrm{ris}}=64$ and $L_{\phi}=100$), which is computationally impossible. Consequently, adapting the inversion-free information-geometric principles of IGA-SD \cite{b1} to resolve the discrete RIS phase states prior to data detection is highly compelling for RIS-assisted UM-MIMO systems.
+
+However, directly adopting the conventional IGA-SD framework \cite{b1} for RIS phase calibration in UM-MIMO networks reveals two fundamental mathematical bottlenecks:
+\begin{enumerate}
+	\item \textit{Cascaded Bilinearity on the Unit Circle:} Unlike conventional symbol detection \cite{b1} where transmit symbols enter the observation model linearly across known rectangular constellation grids, RIS reflection coefficients are unimodular complex exponentials that modulate the cascaded signal bilinearly between the BS-to-RIS and RIS-to-user channels, precluding the direct application of standard real-valued PAM projection rules.
+	\item \textit{Overloaded Phase Ambiguity and Mean-Field Collapse:} In practical deployments where the number of reflecting elements equals or exceeds the real receiver observation dimension (i.e., the overloaded regime $N_{\mathrm{ris}} \ge 2N_r$, where $N_r$ is the number of BS receive antennas), a single-pilot observation provides insufficient degrees of freedom to resolve the discrete phase states. Furthermore, simply passing damped belief messages across pilots acts as a finite-memory moving average rather than accumulating information, causing standard message-passing iterations to suffer from severe ill-conditioning and mean-field collapse.
+\end{enumerate}
+
+To address these critical limitations, this paper adapts the information-geometric framework of \cite{b1} to establish an online discrete RIS phase calibration scheme that enables reliable multiuser signal detection under unknown hardware phases. The primary contributions of this paper are summarized as follows:
+\begin{itemize}
+	\item \textbf{Linearized Formulation and $m$-Projection for Discrete Phase Calibration:} By exploiting the commutativity of diagonal matrix products, we transform the bilinear cascaded RIS link into an equivalent linear observation system. We formulate a pre-evaluated real-valued phase-response tensor $\mathbf{H}_{\phi}$ and map discrete phase estimation onto an exponential family manifold. Using the Lyapunov CLT, closed-form $m$-projection update rules are derived, enabling fast marginal phase estimation without matrix inversion.
+	\item \textbf{Multi-Pilot Persistent Log-Evidence Accumulation:} To stabilize phase calibration in the overloaded regime ($N_{\mathrm{ris}} \ge 2N_r$), we decouple transient intra-pilot message updates from persistent inter-pilot beliefs. By accumulating log-evidence sequentially across successive pilots in the natural parameter space, the proposed online estimator eliminates mean-field collapse and converges rapidly to near-ML accuracy.
+	\item \textbf{End-to-End Effective Channel Reconstruction and Detection Analysis:} The calibrated discrete phases are utilized to reconstruct the effective cascaded channel for uplink multiuser LMMSE symbol detection. Extensive simulations verify that the proposed phase estimator closely tracks the genie-aided local ML benchmark and enables the end-to-end transceiver to match the symbol error rate (SER) of ideal phase knowledge with minimal pilot overhead.
+\end{itemize}
+
+\textit{Organization and Notations:} The remainder of this paper is organized as follows. Section II introduces the system model and formulates the phase calibration and signal detection problems. Section III details the proposed online IGA discrete phase estimator and its complexity analysis. Simulation results are provided in Section IV, and Section V concludes the paper.
+
+Upper and lower case boldface letters denote matrices and column vectors, respectively. $\mathcal{R}\{\cdot\}$ and $\mathcal{I}\{\cdot\}$ denote the real and imaginary parts of a complex quantity. $(\cdot)^T$ and $(\cdot)^H$ denote transpose and conjugate transpose, respectively. $\mathrm{diag}(\mathbf{x})$ denotes the diagonal matrix with $\mathbf{x}$ along its main diagonal. $\mathbf{I}_N$ is the $N \times N$ identity matrix. $D_{\mathrm{KL}}(p \parallel q)$ represents the Kullback-Leibler (K-L) divergence from $p$ to $q$.
+
+\section{System Model and Problem Formulation}
+
+\subsection{System Configuration and Channel Model}
+Consider an uplink RIS-assisted multiuser UM-MIMO system where a BS equipped with an ultra-massive antenna array of $N_r$ antennas serves $K$ single-antenna users simultaneously with the assistance of an RIS comprising $N_{\mathrm{ris}}$ nearly passive reflecting elements. Denote the transmitted symbol vector of all users as $\tilde{\mathbf{s}} \triangleq [\tilde{s}_1, \tilde{s}_2, \dots, \tilde{s}_K]^T \in \tilde{\mathbb{S}}^K$, where $\tilde{s}_k \in \tilde{\mathbb{S}}$, $k \in \mathbb{Z}_K^+ \triangleq \{1, 2, \dots, K\}$, represents the transmit symbol of user $k$. The constellation alphabet is denoted by $\tilde{\mathbb{S}} = \{\tilde{s}^{(0)}, \tilde{s}^{(1)}, \dots, \tilde{s}^{(\tilde{L}-1)}\}$ with modulation order $\tilde{L}$. We assume symmetric $\tilde{L}$-QAM modulation with statistically independent transmit symbols normalized to unit average power, i.e., $\mathbb{E}\{|\tilde{s}_k|^2\} = 1$ for all $k \in \mathbb{Z}_K^+$.
+
+The phase-shift configuration of the RIS is parameterized by the vector $\tilde{\boldsymbol{\phi}} \triangleq [\tilde{\phi}_1, \tilde{\phi}_2, \dots, \tilde{\phi}_{N_{\mathrm{ris}}}]^T \in \mathcal{S}_{\phi}^{N_{\mathrm{ris}}}$, where $\tilde{\phi}_m$ is the reflection coefficient of the $m$-th RIS element. Due to hardware quantization constraints, the phase shift of each element is restricted to a discrete alphabet of $L_{\phi}$ uniform quantization levels:
+\begin{equation}
+	\mathcal{S}_{\phi} = \left\{e^{j\omega_0}, e^{j\omega_1}, \dots, e^{j\omega_{L_{\phi}-1}}\right\}, \quad \omega_l = \frac{2\pi l}{L_{\phi}}, \quad l \in \mathbb{Z}_{L_{\phi}-1},
+\end{equation}
+where $\mathbb{Z}_{L_{\phi}-1} \triangleq \{0, 1, \dots, L_{\phi}-1\}$.
+
+The transmission takes place over flat-fading channels. Let $\tilde{\mathbf{H}}_1 \in \mathbb{C}^{N_r \times N_{\mathrm{ris}}}$, $\tilde{\mathbf{H}}_2 \in \mathbb{C}^{N_{\mathrm{ris}} \times K}$, and $\tilde{\mathbf{H}}_d \in \mathbb{C}^{N_r \times K}$ denote the physical channel matrices corresponding to the RIS-to-BS link, the user-to-RIS link, and the direct user-to-BS link, respectively. The complex baseband received signal vector $\tilde{\mathbf{y}} \in \mathbb{C}^{N_r}$ at the BS is modeled as
+\begin{equation}
+	\tilde{\mathbf{y}} = \left(\tilde{\mathbf{H}}_d + \tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\boldsymbol{\phi}}) \tilde{\mathbf{H}}_2\right)\tilde{\mathbf{s}} + \tilde{\mathbf{z}} = \tilde{\mathbf{H}}_{\mathrm{eff}} \tilde{\mathbf{s}} + \tilde{\mathbf{z}}, \label{eq1}
+\end{equation}
+where $\tilde{\mathbf{H}}_{\mathrm{eff}} \triangleq \tilde{\mathbf{H}}_d + \tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\boldsymbol{\phi}}) \tilde{\mathbf{H}}_2 \in \mathbb{C}^{N_r \times K}$ represents the aggregate effective channel matrix, and $\tilde{\mathbf{z}} \sim \mathcal{CN}(\mathbf{0}, \tilde{\sigma}_z^2 \mathbf{I}_{N_r})$ is an additive circular-symmetric complex Gaussian noise vector with variance $\tilde{\sigma}_z^2$. 
+
+To facilitate the information-geometric formulation over real-valued exponential family manifolds \cite{b1}, the complex-valued system in \eqref{eq1} is transformed into an equivalent augmented real-valued representation:
+\begin{equation}
+	\mathbf{y} = \mathbf{H}_{\mathrm{eff}} \mathbf{s} + \mathbf{z}, \label{eq_real_sys}
+\end{equation}
+where the real-valued vectors and effective channel matrix are defined as
+\begin{align}
+	\mathbf{y} &\triangleq \begin{bmatrix}
+		\mathcal{R}\{\tilde{\mathbf{y}}\} \\
+		\mathcal{I}\{\tilde{\mathbf{y}}\}
+	\end{bmatrix} \in \mathbb{R}^{2N_r}, \quad
+	\mathbf{s} \triangleq \begin{bmatrix}
+		\mathcal{R}\{\tilde{\mathbf{s}}\} \\
+		\mathcal{I}\{\tilde{\mathbf{s}}\}
+	\end{bmatrix} \in \mathbb{S}^{2K},  \nonumber \\
+	\mathbf{z} &\triangleq \begin{bmatrix}
+		\mathcal{R}\{\tilde{\mathbf{z}}\} \\
+		\mathcal{I}\{\tilde{\mathbf{z}}\}
+	\end{bmatrix} \in \mathbb{R}^{2N_r},  \nonumber \\
+	\mathbf{H}_\mathrm{eff} &\triangleq \begin{bmatrix}
+		\mathcal{R}\{\tilde{\mathbf{H}}_\mathrm{eff}\} & -\mathcal{I}\{\tilde{\mathbf{H}}_\mathrm{eff}\} \\
+		\mathcal{I}\{\tilde{\mathbf{H}}_\mathrm{eff}\} & \mathcal{R}\{\tilde{\mathbf{H}}_\mathrm{eff}\}
+	\end{bmatrix} \in \mathbb{R}^{2N_r \times 2K}. \label{eq:real_aug}
+\end{align}
+Here, $\mathbf{z} \sim \mathcal{N}(\mathbf{0}, \sigma_z^2 \mathbf{I}_{2N_r})$ with $\sigma_z^2 = \tilde{\sigma}_z^2 / 2$, and $\mathbb{S} = \{s^{(0)}, s^{(1)}, \dots, s^{(L-1)}\}$ denotes the real-valued pulse amplitude modulation (PAM) alphabet of size $L = \sqrt{\tilde{L}}$ corresponding to the in-phase and quadrature components of the $\tilde{L}$-QAM constellation.
+
+Crucially, reliable multiuser symbol detection via \eqref{eq_real_sys} relies directly on the accurate reconstruction of the effective channel matrix $\mathbf{H}_{\mathrm{eff}}$. Even when the individual physical link matrices ($\tilde{\mathbf{H}}_1$, $\tilde{\mathbf{H}}_2$, and $\tilde{\mathbf{H}}_d$) are acquired via standard channel sounding, any hardware ambiguity or estimation mismatch in the discrete RIS reflection phase vector $\tilde{\boldsymbol{\phi}}$ corrupts the cascaded component $\tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\boldsymbol{\phi}}) \tilde{\mathbf{H}}_2$. This resulting effective CSI mismatch induces severe uncompensated multiuser interference and phase rotation during data detection, leading to catastrophic symbol error floors. Consequently, the overall system operates across two successive stages within each coherence block: (i) the pilot-assisted training phase for RIS phase calibration, where the users transmit deterministic pilot symbol vectors $\tilde{\mathbf{s}}_{\mathrm{pilot}} \in \tilde{\mathbb{S}}^K$ drawn from the same $\tilde{L}$-QAM constellation alphabet and known \textit{a priori} to the BS, and (ii) the data transmission phase, where the calibrated phase estimate is utilized to reconstruct $\mathbf{H}_{\mathrm{eff}}$ for multiuser symbol detection.
+
+\subsection{Problem Formulation for Discrete Phase Estimation (Training Phase)}
+In the pilot-assisted training stage, the channel matrices $\tilde{\mathbf{H}}_1$, $\tilde{\mathbf{H}}_2$, and $\tilde{\mathbf{H}}_d$ are assumed to be known via channel sounding, and the goal is to estimate or verify the discrete hardware phase vector $\tilde{\boldsymbol{\phi}} \in \mathcal{S}_{\phi}^{N_{\mathrm{ris}}}$ from the transmitted pilot vector $\tilde{\mathbf{s}}_{\mathrm{pilot}}$. Since both $\tilde{\mathbf{H}}_d$ and $\tilde{\mathbf{s}}_{\mathrm{pilot}}$ are known, by subtracting the deterministic direct-link contribution, the residual observation vector $\tilde{\mathbf{y}}_{\mathrm{res}} \in \mathbb{C}^{N_r}$ is expressed as
+\begin{equation}
+	\tilde{\mathbf{y}}_{\mathrm{res}} \triangleq \tilde{\mathbf{y}} - \tilde{\mathbf{H}}_d \tilde{\mathbf{s}}_{\mathrm{pilot}} = \tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\boldsymbol{\phi}}) \tilde{\mathbf{H}}_2 \tilde{\mathbf{s}}_{\mathrm{pilot}} + \tilde{\mathbf{z}}. \label{eq2}
+\end{equation}
+Exploiting the commutativity of diagonal matrix products, we have $\mathrm{diag}(\tilde{\boldsymbol{\phi}})\tilde{\mathbf{H}}_2 \tilde{\mathbf{s}}_{\mathrm{pilot}} = \mathrm{diag}(\tilde{\mathbf{H}}_2 \tilde{\mathbf{s}}_{\mathrm{pilot}})\tilde{\boldsymbol{\phi}}$. Defining the effective phase measurement matrix as
+\begin{equation}
+	\tilde{\mathbf{W}} \triangleq \tilde{\mathbf{H}}_1 \mathrm{diag}(\tilde{\mathbf{H}}_2 \tilde{\mathbf{s}}_{\mathrm{pilot}}) \in \mathbb{C}^{N_r \times N_{\mathrm{ris}}},
+\end{equation}
+the residual signal in \eqref{eq2} reduces to an equivalent linear observation system:
+\begin{equation}
+	\tilde{\mathbf{y}}_{\mathrm{res}} = \tilde{\mathbf{W}}\tilde{\boldsymbol{\phi}} + \tilde{\mathbf{z}}. \label{eq3}
+\end{equation}
+
+To establish the information-geometric framework, we decompose \eqref{eq3} into an augmented real-valued model by defining $\mathbf{y}_{\mathrm{real}} \triangleq [\mathcal{R}\{\tilde{\mathbf{y}}_{\mathrm{res}}\}^T, \mathcal{I}\{\tilde{\mathbf{y}}_{\mathrm{res}}\}^T]^T \in \mathbb{R}^{2N_r}$, $\mathbf{z}_{\mathrm{real}} \triangleq [\mathcal{R}\{\tilde{\mathbf{z}}\}^T, \mathcal{I}\{\tilde{\mathbf{z}}\}^T]^T \sim \mathcal{N}(\mathbf{0}, \sigma_z^2 \mathbf{I}_{2N_r})$, and the real-valued measurement matrix $\mathbf{W} \in \mathbb{R}^{2N_r \times 2N_{\mathrm{ris}}}$:
+\begin{align}
+	\mathbf{W} &\triangleq \begin{bmatrix}
+		\mathbf{W}_R & \mathbf{W}_I
+	\end{bmatrix}, \nonumber \\
+	\mathbf{W}_R &\triangleq \begin{bmatrix} \mathcal{R}\{\tilde{\mathbf{W}}\} \\ \mathcal{I}\{\tilde{\mathbf{W}}\} \end{bmatrix} \in \mathbb{R}^{2N_r \times N_{\mathrm{ris}}}, \nonumber \\ 
+	\mathbf{W}_I &\triangleq \begin{bmatrix} -\mathcal{I}\{\tilde{\mathbf{W}}\} \\ \mathcal{R}\{\tilde{\mathbf{W}}\} \end{bmatrix} \in \mathbb{R}^{2N_r \times N_{\mathrm{ris}}}.
+\end{align}
+Since the reflection coefficient of element $m$ takes the form $\tilde{\phi}_m = e^{j\omega_m} = \cos(\omega_m) + j\sin(\omega_m)$ with phase angle $\omega_m \in \{\omega_0, \dots, \omega_{L_{\phi}-1}\}$, we define the element-wise and stacked real-valued reflection vectors as
+\begin{align}
+	\boldsymbol{\phi}_m &\triangleq \begin{bmatrix}
+		\mathcal{R}\{\tilde{\phi}_m\} \\
+		\mathcal{I}\{\tilde{\phi}_m\}
+	\end{bmatrix}=\begin{bmatrix}
+		\cos(\omega_m) \\
+		\sin(\omega_m)
+	\end{bmatrix} \in \mathbb{R}^2, \\
+	\boldsymbol{\phi} &\triangleq \begin{bmatrix}
+		\mathcal{R}\{\tilde{\boldsymbol{\phi}}\} \\
+		\mathcal{I}\{\tilde{\boldsymbol{\phi}}\}
+	\end{bmatrix}
+	= \begin{bmatrix}
+		\cos(\boldsymbol{\omega}) \\
+		\sin(\boldsymbol{\omega})
+	\end{bmatrix} \in \mathbb{R}^{2N_\mathrm{ris}},
+\end{align}
+where $\boldsymbol{\omega} \triangleq [\omega_1, \dots, \omega_{N_{\mathrm{ris}}}]^T$. Now, the real-valued residual observation vector is expressed as
+\begin{equation}
+	\mathbf{y}_{\mathrm{real}} = \mathbf{W}\boldsymbol{\phi} + \mathbf{z}_{\mathrm{real}} = \mathbf{W}_R\,\cos(\boldsymbol{\omega}) + \mathbf{W}_I\,\sin(\boldsymbol{\omega}) + \mathbf{z}_{\mathrm{real}} \in \mathbb{R}^{2N_r}.
+\end{equation}
+By evaluating the deterministic real-valued channel response across all $L_{\phi}$ discrete phase levels for every RIS element, we construct the phase-response tensor $\mathbf{H}_{\phi} \in \mathbb{R}^{2N_r \times N_{\mathrm{ris}} \times L_{\phi}}$, whose $(n, m, l)$-th entry is defined as
+\begin{equation}
+	H_{\phi}(n, m, l) \triangleq W_R(n, m)\cos(\omega_l) + W_I(n, m)\sin(\omega_l), \label{eq4}
+\end{equation}
+for observation dimension $n \in \mathbb{Z}_{2N_r}^+$, RIS element $m \in \mathbb{Z}_{N_{\mathrm{ris}}}^+$, and discrete phase index $l \in \mathbb{Z}_{L_{\phi}-1}$.
+
+Accordingly, when the $m$-th RIS element adopts the $l_m$-th discrete phase state $\tilde{\phi}_m = e^{j\omega_{l_m}}$ (with $l_m \in \mathbb{Z}_{L_{\phi}-1}$), the $n$-th component of the real-valued received vector is given by
+\begin{equation}
+	y_{\mathrm{real},n} = \sum_{m=1}^{N_{\mathrm{ris}}} H_{\phi}(n, m, l_m) + z_{\mathrm{real},n}.
+\end{equation}
+The optimal maximum \textit{a posteriori} (MAP) discrete phase estimator is formulated as
+\begin{equation}
+	\hat{\boldsymbol{\phi}}_{\mathrm{MAP}} = \arg\max_{\tilde{\boldsymbol{\phi}} \in \mathcal{S}_{\phi}^{N_{\mathrm{ris}}}} p(\tilde{\boldsymbol{\phi}} \mid \mathbf{y}_{\mathrm{real}}), \label{eq5}
+\end{equation}
+which requires an exhaustive search over $L_{\phi}^{N_{\mathrm{ris}}}$ candidate vectors. As demonstrated in \cite{b1,b10}, evaluating \eqref{eq5} is NP-hard and computationally infeasible for large-scale surfaces. In Section III, we reformulate this intractable joint search as obtaining the marginal \textit{a posteriori} distributions $p_m(\tilde{\phi}_m \mid \mathbf{y}_{\mathrm{real}})$ to perform maximization of the \textit{a posteriori} marginals (MPM) estimation:
+\begin{equation}
+	\hat{\phi}_{m,\mathrm{MPM}} = \arg\max_{\tilde{\phi}_m \in \mathcal{S}_{\phi}} p_m(\tilde{\phi}_m \mid \mathbf{y}_{\mathrm{real}}), \quad m \in \mathbb{Z}_{N_{\mathrm{ris}}}^+.
+\end{equation}
 	
 	\begin{thebibliography}{00}
 		\bibitem{b1} J. Yang, Y. Chen, X. Gao, D. T. M. Slock, and X.-G. Xia, ``Signal detection for ultra-massive MIMO: An information geometry approach,'' \textit{IEEE Trans. Signal Process.}, vol. 72, pp. 824--838, 2024, doi: 10.1109/TSP.2024.3358617.
